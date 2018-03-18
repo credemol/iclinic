@@ -1,0 +1,7 @@
+theme : night
+theme-override : assets/css/PITCHME.codemax.css
+logo : assets/image/oracle-cloud.png
+highlight : atom-one-light
+transition : none
+published : true
+footnote : "Oracle Study Group"
