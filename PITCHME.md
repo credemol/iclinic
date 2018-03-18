@@ -9,12 +9,13 @@
 ---
 ## Demo
 
-> Samsung Medial Center
-> Samsung Genome Institute
-> SGI Gateway Service: 
+- Samsung Medial Center
+- Samsung Genome Institute
+- SGI Gateway Service: 
 
-[SGI Gateway Application](https://sgigateway1-sgi.uscom-central-1.oraclecloud.com/)
-[Oracle Developer Cloud Service](https://developer.us2.oraclecloud.com/developer22241-sgi/)
+- [Presentation](https://gitpitch.com/credemol/iclinic/master)
+- [SGI Gateway Application](https://sgigateway1-sgi.uscom-central-1.oraclecloud.com/)
+- [Oracle Developer Cloud Service](https://developer.us2.oraclecloud.com/developer22241-sgi/)
 
 ---
 ### Run SGI Gateway Application locally.
