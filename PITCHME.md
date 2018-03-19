@@ -257,10 +257,10 @@ $ kubectl get pod $sgigw_app_pod_id
 ### Setting up
 
 ```sh
-$ vi docker-compose.yaml
-$ docker-compose build
+$ vi docker-compose-mysqlonly.yaml
+$ docker-compose -f docker-compose-mysqlonly.yaml build
 $ docker image ls | grep iclinic
-$ docker-compose up
+$ docker-compose -f docker-compose-mysqlonly.yaml up
 ```
 
 ---
@@ -274,7 +274,7 @@ dependencies:
   - Web/Rest Repositories
 
 
-
+---
 ### Sample Entity class
 
 Package Name: com.example.demo.entity
@@ -324,11 +324,11 @@ $ mvn run spring-boot:run
 			<artifactId>springfox-swagger2</artifactId>
 			<version>2.6.1</version>
 		</dependency>
-			<dependency>
-				<groupId>io.springfox</groupId>
-				<artifactId>springfox-swagger-ui</artifactId>
-				<version>2.6.1</version>
-			</dependency>
+    <dependency>
+      <groupId>io.springfox</groupId>
+      <artifactId>springfox-swagger-ui</artifactId>
+      <version>2.6.1</version>
+    </dependency>
 ```
 
 ---
@@ -376,12 +376,12 @@ public class SampleService {
 ```java
 	@RequestMapping(value="", method=RequestMethod.GET,
 			produces= {MediaType.APPLICATION_JSON_VALUE})
-	public Collection<Sample> getAllSamples() {
+	public ResponseEntity<List<Sample>> getAllSamples() {
 		List<Sample> samples = new ArrayList<>();
 		
 		repository.findAll().iterator().forEachRemaining(samples::add);
 
-		return samples;
+		return new ResponseEntity<List<Sample>>(samples, HttpStatus.OK);
 	}
 ```
 
@@ -437,9 +437,13 @@ $ brew install swagger-codegen
 $ mkdir ../codegen
 $ cd ../codegen
 $ curl -o swagger.json http://localhost:8080/v2/api-docs
-$ swagger-codegen generate -v -i swagger.json -l "java" -o "java-client" --group-id "com.iclinicemr.api" --artifact-id "sampleapi" --invoker-package "com.iclinicemr.client" --api-package "com.iclinicemr.api" --model-package "com.iclinicemr.model"
+$ swagger-codegen generate -v -i swagger.json -l "java" \
+  -o "java-client" --group-id "com.iclinicemr.api" \
+  --artifact-id "sampleapi" \
+  --invoker-package "com.iclinicemr.client" \
+  --api-package "com.iclinicemr.api" \
+  --model-package "com.iclinicemr.model"
 
-#-Dio.swagger.parser.util.RemoteUrl.trustAll=true
 $ code java-client
 ```
 
@@ -462,7 +466,10 @@ $ mvn test
 ### Swagger Codegen(Server: 23): SpringBoot
 
 ```sh
-$ swagger-codegen generate -v -i swagger.json -l "spring" -o "springboot-api" --group-id "com.iclinicemr.api" --artifact-id "sampleapi" --api-package "com.iclinicemr.api" --model-package "com.iclinicemr.model" --model-name-suffix "VO"
+$ swagger-codegen generate -v -i swagger.json -l "spring" \
+ -o "springboot-api" --group-id "com.iclinicemr.api" \
+ --artifact-id "sampleapi" --api-package "com.iclinicemr.api" \
+ --model-package "com.iclinicemr.model" --model-name-suffix "VO"
 
 $ code springboot-api
 $ mvn spring-boot:run -Dserver.port=9090
@@ -479,3 +486,73 @@ $ open https://apimatic.io/transformer
 
 - Convert: swagger.json --> swagger.yaml 
 - Convert: swagger.json --> Postman.json
+
+---
+### docker-maven-plugin
+
+[https://github.com/spotify/docker-maven-plugin](https://github.com/spotify/docker-maven-plugin)
+
+---
+### ~/.m2/settings.xml
+```sh
+$ mvn --encrypt-password your-dockerhub-password
+```
+```xml
+  <server>
+    <id>docker-hub</id>
+    <username>credemol</username>
+    <password>{GSxBOfHdHTkHMlOpe/BhqTLMb1zLfz86xXoZxRmZng0=}</password>
+    <configuration>
+      <email>credemol@gmail.com</email>
+    </configuration>
+  </server>
+```
+
+---
+### pom.xml
+
+```xml
+            <plugin>
+                <groupId>com.spotify</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <version>0.4.11</version>
+                <configuration>
+                
+			      <serverId>docker-hub</serverId>
+			      <registryUrl>https://index.docker.io/v1/</registryUrl>
+                 
+                    <imageName>${docker.image.prefix}/${project.artifactId}</imageName>
+                    <dockerDirectory>src/main/docker</dockerDirectory>
+                    <resources>
+                        <resource>
+                            <targetPath>/</targetPath>
+                            <directory>${project.build.directory}</directory>
+                            <include>${project.build.finalName}.jar</include>
+                        </resource>
+                    </resources>
+                </configuration>
+            </plugin>	
+```
+@[7-8](docker repository information-docker hub)
+@[12](Dockerfile location)
+
+---
+### src/main/docker/Dockerfile
+
+```dockerfile
+FROM frolvlad/alpine-oraclejdk8:slim
+
+ADD iclinic-demo-0.0.1-SNAPSHOT.jar app.jar
+RUN sh -c 'touch /app.jar'
+ENV JAVA_OPTS=""
+ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar /app.jar" ]
+```
+
+---
+### Build Docker Image and Push it to Docker hub
+
+```sh
+$ mvn clean package docker:build -DpushImage
+$ docker image ls | grep credemol/iclinic-demo
+$ open https://hub.docker.com/r/credemol/iclinic-demo/
+```
