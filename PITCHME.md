@@ -1,4 +1,4 @@
-# Presentation for iClinic
+# Demo for iClinic
 
 ---
 # Agenda
@@ -22,6 +22,7 @@
 1. Set up Environment(MySQL, Spring Boot Application)
 1. Build REST API & Swagger
 1. Using Swagger Codegen & API Transformer
+1. docker-maven-plugin (build & push)
 
 ---
 ## Demo
@@ -149,7 +150,7 @@ $ kubectl describe svc sgigw-db
 ### Kubernetes (Deployment)
 
 ```sh
-$ vi sgigw-app-deployment.yaml # modify SGI_JDBC_URL, minikube service sgigw-db --url
+$ vi sgigw-app-deployment.yaml 
 $ kubectl create -f sgigw-app-deployment.yaml
 $ kubectl get all
 ```
@@ -534,7 +535,7 @@ $ mvn --encrypt-password your-dockerhub-password
             </plugin>	
 ```
 @[7-8](docker repository information-docker hub)
-@[12](Dockerfile location)
+@[11](Dockerfile location)
 
 ---
 ### src/main/docker/Dockerfile
