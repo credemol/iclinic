@@ -127,8 +127,8 @@ $ minikube status
 $ minikube start
 $ vi docker-compose-v3.yml
 $ kompose convert -f docker-compose-v3.yml
-$ vi sgigw-deployment.yaml
-$ vi sgigw-service.yaml
+$ vi sgigw-app-deployment.yaml
+$ vi sgigw-app-service.yaml
 $ kubectl get all --show-labels
 $ kubectl delete all --selector "io.kompose.service=sgigw-db"
 $ kubectl delete all --selector "io.kompose.service=sgigw-app"
@@ -243,7 +243,7 @@ $ rm sgigw-secret.yaml
 
 ```sh
 $ kubectl get all --show-labels
-$ delete all --selector "io.kompose.service=sgigw-app"
+$ kubectl delete all --selector "io.kompose.service=sgigw-app"
 # modify sgigw-app-deployment.yaml
 $ kubectl create -f sgigw-app-deployment.yaml
 $ open $(minikube service sgigw-app --url)
