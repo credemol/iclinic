@@ -199,6 +199,7 @@ $ kubectl get pods
 $ kubectl deployments pods
 ```
 
+---
 ### Kubernetes ConfigMap & Secret
 
 ```sh 
@@ -249,4 +250,232 @@ $ kubectl get pods
 $ kubectl get pod $sgigw_app_pod_id
 ```
 
+---
 ## Spring Boot & API First Strategy
+
+---
+### Setting up
+
+```sh
+$ vi docker-compose.yaml
+$ docker-compose build
+$ docker image ls | grep iclinic
+$ docker-compose up
+```
+
+---
+### Create Spring Boot Application
+
+project name: iclinic-demo
+dependencies:
+  - SQL/JPA
+  - SQL/MySQL
+  - Web/Web
+  - Web/Rest Repositories
+
+
+
+### Sample Entity class
+
+Package Name: com.example.demo.entity
+Class Name: Sample 
+
+```java
+	/** 아이디 */
+	private String id;
+	/** 이름 */
+	private String name;
+	/** 내용 */
+	private String description;
+	/** 사용여부 */
+	private String useYn;
+	/** 등록자 */
+	private String regUser;  
+```    
+
+---
+### SampleRepository interface
+
+Package Name: com.example.demo.repo
+Class Name: SampleRepository
+
+```java
+@RepositoryRestController
+public interface SampleRepository extends CrudRepository<Sample, String>{
+
+}
+```
+
+---
+### Run REST API
+
+```sh 
+$ mvn clean package
+$ mvn run spring-boot:run
+
+```
+
+---
+### Swagger - pom.xml
+
+```xml
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger2</artifactId>
+			<version>2.6.1</version>
+		</dependency>
+			<dependency>
+				<groupId>io.springfox</groupId>
+				<artifactId>springfox-swagger-ui</artifactId>
+				<version>2.6.1</version>
+			</dependency>
+```
+
+---
+### Swagger - Add EnableSwagger2
+
+```java
+package com.example.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+@SpringBootApplication
+@EnableSwagger2
+public class IclinicDemoApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(IclinicDemoApplication.class, args);
+	}
+}
+```
+@[9](Add EnableSwagger2 annotation)
+
+---
+### Swagger - SampleRestController class
+
+Package: com.example.demo.rest;
+
+```java
+@RequestMapping("/rest/samples")
+@RestController
+public class SampleService {
+
+	@Autowired
+	SampleRepository repository;
+	
+	
+}
+``` 
+
+---
+### Swagger - GetAll
+
+```java
+	@RequestMapping(value="", method=RequestMethod.GET,
+			produces= {MediaType.APPLICATION_JSON_VALUE})
+	public Collection<Sample> getAllSamples() {
+		List<Sample> samples = new ArrayList<>();
+		
+		repository.findAll().iterator().forEachRemaining(samples::add);
+
+		return samples;
+	}
+```
+
+---
+### Swagger - AddSample
+
+```java
+	@RequestMapping(value="", method=RequestMethod.POST, 
+			produces= {MediaType.APPLICATION_JSON_VALUE},
+			consumes= {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<Sample> addSample(@RequestBody Sample sample) {
+		if(repository.findById(sample.getId()).isPresent()) {
+			return new ResponseEntity<Sample>(HttpStatus.CONFLICT);
+		}
+		
+		repository.save(sample);
+		
+		return new ResponseEntity<Sample>(sample, HttpStatus.OK);
+	}
+```
+
+---
+### Swagger - GetById
+
+```java
+	@RequestMapping(value="{id}", method=RequestMethod.GET,
+			produces= {MediaType.APPLICATION_JSON_VALUE})
+	public ResponseEntity<Sample> getById(@PathVariable("id") String id) {
+		Optional<Sample> sample = repository.findById(id);
+		
+		if(sample.isPresent()) {
+			return new ResponseEntity<Sample>(sample.get(), HttpStatus.OK);
+		}
+		return new ResponseEntity<Sample>(HttpStatus.NOT_FOUND);
+	}
+```
+
+---
+### Run
+
+```sh
+$ mvn clean package
+$ mvn spring-boot:run
+$ open http://localhost:8080/swagger-ui.html
+$ open http://localhost:8080/v2/api-docs
+```
+
+---
+### Swagger Codegen(Client: 32) - Java
+
+```sh
+$ brew install swagger-codegen
+$ mkdir ../codegen
+$ cd ../codegen
+$ curl -o swagger.json http://localhost:8080/v2/api-docs
+$ swagger-codegen generate -v -i swagger.json -l "java" -o "java-client" --group-id "com.iclinicemr.api" --artifact-id "sampleapi" --invoker-package "com.iclinicemr.client" --api-package "com.iclinicemr.api" --model-package "com.iclinicemr.model"
+
+#-Dio.swagger.parser.util.RemoteUrl.trustAll=true
+$ code java-client
+```
+
+---
+### Test
+
+- com.iclinicemr.client.ApiClient: line 115 https -> http
+- com.iclinicemr.api.SampleRestControllerApiTest
+  - //@Ignore
+  - // comment addSample
+  - System.out.println("all samples: " + response);
+  - String id = "SAMPLE-00001";
+  - System.out.println("sample: " + response);
+
+```sh
+$ mvn test
+```
+
+---
+### Swagger Codegen(Server: 23): SpringBoot
+
+```sh
+$ swagger-codegen generate -v -i swagger.json -l "spring" -o "springboot-api" --group-id "com.iclinicemr.api" --artifact-id "sampleapi" --api-package "com.iclinicemr.api" --model-package "com.iclinicemr.model" --model-name-suffix "VO"
+
+$ code springboot-api
+$ mvn spring-boot:run -Dserver.port=9090
+$ open http://localhost:9090/swagger-ui.html
+```
+
+---
+### API Transformation
+
+```sh
+$ open https://apimatic.io/
+$ open https://apimatic.io/transformer
+```
+
+- Convert: swagger.json --> swagger.yaml 
+- Convert: swagger.json --> Postman.json
